@@ -12,7 +12,7 @@ import (
 )
 
 type Claims struct {
-	UserID string `json:"user_id"`
+	UserID uuid.UUID `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
@@ -27,9 +27,8 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		if err != nil || !isValidToken(cookie, secretKey) {
 			newUserID := uuid.New()
-			userIDStr := newUserID.String()
 
-			token, err := generateToken(userIDStr, secretKey)
+			token, err := GenerateToken(newUserID, secretKey)
 			if err != nil {
 				logger.Errorf("failed to generate token: %v", err)
 				c.AbortWithStatus(http.StatusInternalServerError)
@@ -47,14 +46,13 @@ func AuthMiddleware() gin.HandlerFunc {
 			)
 
 			c.Set(cookieName, newUserID)
-			logger.Infof("created new user with ID: %s", userIDStr)
+			logger.Infof("created new user with ID: %s", newUserID.String())
 		} else {
-			userIDStr, err := extractUserIDFromToken(cookie, secretKey)
+			userID, err := extractUserIDFromToken(cookie, secretKey)
 			if err != nil {
 				newUserID := uuid.New()
-				userIDStr = newUserID.String()
 
-				token, err := generateToken(userIDStr, secretKey)
+				token, err := GenerateToken(newUserID, secretKey)
 				if err != nil {
 					logger.Errorf("failed to generate token: %v", err)
 					c.AbortWithStatus(http.StatusInternalServerError)
@@ -72,45 +70,20 @@ func AuthMiddleware() gin.HandlerFunc {
 				)
 
 				c.Set(cookieName, newUserID)
-				logger.Infof("regenerated token for user, new ID: %s", userIDStr)
+				logger.Infof("regenerated token for user, new ID: %s", newUserID.String())
 				c.Next()
 				return
 			}
 
-			userID, err := uuid.Parse(userIDStr)
-			if err != nil {
-				userID = uuid.New()
-				userIDStr = userID.String()
-
-				token, err := generateToken(userIDStr, secretKey)
-				if err != nil {
-					logger.Errorf("failed to generate token: %v", err)
-					c.AbortWithStatus(http.StatusInternalServerError)
-					return
-				}
-
-				c.SetCookie(
-					cookieName,
-					token,
-					3600*24*30,
-					"/",
-					"",
-					false,
-					true,
-				)
-
-				logger.Infof("regenerated UUID for user, new ID: %s", userIDStr)
-			}
-
 			c.Set(cookieName, userID)
-			logger.Infof("authenticated user with ID: %s", userIDStr)
+			logger.Infof("authenticated user with ID: %s", userID.String())
 		}
 
 		c.Next()
 	}
 }
 
-func generateToken(userID string, key []byte) (string, error) {
+func GenerateToken(userID uuid.UUID, key []byte) (string, error) {
 	claims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -140,7 +113,7 @@ func isValidToken(tokenString string, key []byte) bool {
 	return err == nil
 }
 
-func extractUserIDFromToken(tokenString string, key []byte) (string, error) {
+func extractUserIDFromToken(tokenString string, key []byte) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -149,14 +122,14 @@ func extractUserIDFromToken(tokenString string, key []byte) (string, error) {
 	})
 
 	if err != nil {
-		return "", err
+		return uuid.Nil, err
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims.UserID, nil
 	}
 
-	return "", errors.New("invalid token claims")
+	return uuid.Nil, errors.New("invalid token claims")
 }
 
 func RequireAuth() gin.HandlerFunc {

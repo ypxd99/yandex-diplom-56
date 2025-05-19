@@ -13,7 +13,6 @@ func MigrateDBUp(ctx context.Context) error {
 	}
 	return goose.UpContext(ctx, db.db.DB, "./migration")
 }
-
 func MigrateDBDown(ctx context.Context) error {
 	db, err := Connect(ctx)
 	if err != nil {
