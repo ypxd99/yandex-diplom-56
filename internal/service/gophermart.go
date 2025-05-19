@@ -76,6 +76,7 @@ func (s *Service) CreateOrder(ctx context.Context, userID uuid.UUID, number stri
 	}
 
 	order := &model.Order{
+		ID:         uuid.New(),
 		UserID:     userID,
 		Number:     number,
 		Status:     model.OrderStatusNew,

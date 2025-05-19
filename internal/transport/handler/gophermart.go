@@ -151,6 +151,7 @@ func (h *Handler) GetOrders(c *gin.Context) {
 	}
 
 	if len(orders) == 0 {
+		c.Header("Content-Type", "application/json")
 		c.Status(http.StatusNoContent)
 		return
 	}
@@ -172,6 +173,7 @@ func (h *Handler) GetOrders(c *gin.Context) {
 		}
 	}
 
+	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, response)
 }
 
