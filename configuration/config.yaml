@@ -1,0 +1,32 @@
+Logger:
+  Level: trace
+  File:
+    Enabled: false
+    FileName: log/gophermart.log
+    MaxSize: 10
+    MaxBackups: 10
+    MaxAge: 10
+  SysLog:
+    Enabled: false
+    Address: ""
+    Network: ""
+    Tag: ""
+Server:
+  Address: "127.0.0.1"
+  Port: 8080
+  RTimeout: 10
+  WTimeout: 10
+Postgres:
+  DriverName: "postgres"
+  Address: ""
+  DBName: "project"
+  User: ""
+  Password: ""
+  MaxConn: 10
+  MaxConnLifeTime: 2
+  Trace: true
+  MakeMigration: true
+  SQLKeyWords: ["DELETE", "DROP", "EXEC", "EXECUTE", "SELECT", "TRIM", "TRUNCATE"]
+Auth:
+  SecretKey: "my-secret-key"
+  CookieName: "user_id"
