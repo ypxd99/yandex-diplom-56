@@ -85,16 +85,7 @@ func (p *PostgresRepo) GetUserBalance(ctx context.Context, userID uuid.UUID) (*m
 		Where("user_id = ?", userID).
 		Scan(ctx)
 	if err == sql.ErrNoRows {
-		balance = &model.UserBalance{
-			UserID:    userID,
-			Current:   0,
-			Withdrawn: 0,
-		}
-		_, err = p.db.NewInsert().Model(balance).Exec(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return balance, nil
+		return nil, repository.ErrBalanceNotFound
 	}
 	return balance, err
 }
@@ -122,4 +113,18 @@ func (p *PostgresRepo) GetUserWithdrawals(ctx context.Context, userID uuid.UUID)
 		Order("processed_at DESC").
 		Scan(ctx)
 	return withdrawals, err
+}
+
+func (p *PostgresRepo) GetOrdersByStatus(ctx context.Context, status model.OrderStatus) ([]*model.Order, error) {
+	var orders []*model.Order
+	err := p.db.NewSelect().
+		Model(&orders).
+		Where("status = ?", status).
+		Scan(ctx)
+	return orders, err
+}
+
+func (p *PostgresRepo) CreateUserBalance(ctx context.Context, balance *model.UserBalance) error {
+	_, err := p.db.NewInsert().Model(balance).Exec(ctx)
+	return err
 }

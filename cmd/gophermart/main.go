@@ -40,6 +40,11 @@ func main() {
 	defer repo.Close()
 
 	service := service.InitService(repo)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	service.StartAccrualWorker(ctx)
+
 	h := handler.InitHandler(service)
 
 	router := gin.Default()
@@ -59,9 +64,9 @@ func main() {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Stop(ctx); err != nil {
+	ctxSD, cancelSD := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelSD()
+	if err := srv.Stop(ctxSD); err != nil {
 		util.GetLogger().Fatalf("Server forced to shutdown: %s", err.Error())
 	}
 	util.GetLogger().Log(4, "HTTP GOPHERMART service stopped")

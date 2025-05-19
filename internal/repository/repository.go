@@ -13,6 +13,7 @@ var (
 	ErrUserExists                = errors.New("user already exists")
 	ErrOrderNotFound             = errors.New("order not found")
 	ErrOrderBelongsToAnotherUser = errors.New("order belongs to another user")
+	ErrBalanceNotFound           = errors.New("balance not found")
 )
 
 type GophermartRepo interface {
@@ -29,9 +30,11 @@ type GophermartRepo interface {
 	GetOrderByID(ctx context.Context, id uuid.UUID) (*model.Order, error)
 	GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*model.Order, error)
 	UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status model.OrderStatus, accrual float64) error
+	GetOrdersByStatus(ctx context.Context, status model.OrderStatus) ([]*model.Order, error)
 
 	GetUserBalance(ctx context.Context, userID uuid.UUID) (*model.UserBalance, error)
 	UpdateUserBalance(ctx context.Context, userID uuid.UUID, current, withdrawn float64) error
+	CreateUserBalance(ctx context.Context, balance *model.UserBalance) error
 
 	CreateWithdrawal(ctx context.Context, withdrawal *model.Withdrawal) error
 	GetUserWithdrawals(ctx context.Context, userID uuid.UUID) ([]*model.Withdrawal, error)

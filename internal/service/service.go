@@ -37,6 +37,7 @@ type GophermartService interface {
 	GetUserBalance(ctx context.Context, userID uuid.UUID) (*model.UserBalance, error)
 	WithdrawBalance(ctx context.Context, userID uuid.UUID, orderNumber string, sum float64) error
 	GetUserWithdrawals(ctx context.Context, userID uuid.UUID) ([]*model.Withdrawal, error)
+	InitializeUserBalance(ctx context.Context, userID uuid.UUID) error
 }
 
 func InitService(repo repository.GophermartRepo) *Service {

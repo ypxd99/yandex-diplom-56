@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ypxd99/yandex-diplom-56/internal/middleware"
 	"github.com/ypxd99/yandex-diplom-56/internal/model"
+	"github.com/ypxd99/yandex-diplom-56/internal/repository"
 	"github.com/ypxd99/yandex-diplom-56/internal/service"
 	"github.com/ypxd99/yandex-diplom-56/util"
 )
@@ -32,13 +34,31 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
+	err = h.service.InitializeUserBalance(c.Request.Context(), user.ID)
+	if err != nil {
+		util.GetLogger().Errorf("Failed to initialize user balance: %v", err)
+	}
+
 	token, err := middleware.GenerateToken(user.ID, []byte(util.GetConfig().Auth.SecretKey))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	cookieName := util.GetConfig().Auth.CookieName
+	c.SetCookie(
+		cookieName,
+		token,
+		3600*24*30,
+		"/",
+		"",
+		false,
+		true,
+	)
+
+	c.Set(cookieName, user.ID)
+
+	c.Status(http.StatusOK)
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -68,7 +88,20 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	cookieName := util.GetConfig().Auth.CookieName
+	c.SetCookie(
+		cookieName,
+		token,
+		3600*24*30,
+		"/",
+		"",
+		false,
+		true,
+	)
+
+	c.Set(cookieName, user.ID)
+
+	c.Status(http.StatusOK)
 }
 
 func (h *Handler) CreateOrder(c *gin.Context) {
@@ -91,6 +124,11 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	}
 
 	orderNumber := string(number)
+	if orderNumber == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Order number is required"})
+		return
+	}
+
 	if !isValidLuhn(orderNumber) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Invalid order number"})
 		return
@@ -186,18 +224,32 @@ func (h *Handler) GetBalance(c *gin.Context) {
 
 	balance, err := h.service.GetUserBalance(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return
+		if errors.Is(err, repository.ErrBalanceNotFound) {
+			balance = &model.UserBalance{
+				UserID:    userID,
+				Current:   0,
+				Withdrawn: 0,
+			}
+
+			if err := h.service.InitializeUserBalance(c.Request.Context(), userID); err != nil {
+				util.GetLogger().Errorf("Failed to initialize user balance: %v", err)
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
 	}
 
-	if balance.Current < 0 {
-		balance.Current = 0
-	}
-	if balance.Withdrawn < 0 {
-		balance.Withdrawn = 0
+	response := struct {
+		Current   float64 `json:"current"`
+		Withdrawn float64 `json:"withdrawn"`
+	}{
+		Current:   balance.Current,
+		Withdrawn: balance.Withdrawn,
 	}
 
-	c.JSON(http.StatusOK, balance)
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *Handler) WithdrawBalance(c *gin.Context) {
@@ -224,6 +276,21 @@ func (h *Handler) WithdrawBalance(c *gin.Context) {
 
 	if req.Sum <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Sum must be positive"})
+		return
+	}
+
+	balance, err := h.service.GetUserBalance(c.Request.Context(), userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrBalanceNotFound) {
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": "Insufficient funds"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	if balance.Current < req.Sum {
+		c.JSON(http.StatusPaymentRequired, gin.H{"error": "Insufficient funds"})
 		return
 	}
 
@@ -254,6 +321,7 @@ func (h *Handler) GetWithdrawals(c *gin.Context) {
 	}
 
 	if len(withdrawals) == 0 {
+		c.Header("Content-Type", "application/json")
 		c.Status(http.StatusNoContent)
 		return
 	}
@@ -273,16 +341,11 @@ func (h *Handler) GetWithdrawals(c *gin.Context) {
 		}
 	}
 
+	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, response)
 }
 
 func (h *Handler) GetOrderAccrual(c *gin.Context) {
-	userID, err := middleware.GetUserID(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	number := c.Param("number")
 	if !isValidLuhn(number) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Invalid order number"})
@@ -296,11 +359,6 @@ func (h *Handler) GetOrderAccrual(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return
-	}
-
-	if order.UserID != userID {
-		c.Status(http.StatusNoContent)
 		return
 	}
 
