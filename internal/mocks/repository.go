@@ -104,7 +104,7 @@ func (m *MockGophermartRepo) GetUserWithdrawals(ctx context.Context, userID uuid
 	return args.Get(0).([]*model.Withdrawal), args.Error(1)
 }
 
-func (m *MockGophermartRepo) CleanupTables(ctx context.Context) error {
+func (m *MockGophermartRepo) CleanUpTables(ctx context.Context) error {
 	args := m.Called(ctx)
 	return args.Error(0)
 }

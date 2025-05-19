@@ -9,6 +9,7 @@ import (
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/uptrace/bun/extra/bundebug"
+	"github.com/ypxd99/yandex-diplom-56/internal/model"
 	"github.com/ypxd99/yandex-diplom-56/util"
 )
 
@@ -43,4 +44,21 @@ func (p *PostgresRepo) Status(ctx context.Context) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (p *PostgresRepo) CleanUpTables(ctx context.Context) error {
+	_, err := p.db.NewDelete().Model((*model.Withdrawal)(nil)).Where("1=1").Exec(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.NewDelete().Model((*model.Order)(nil)).Where("1=1").Exec(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.NewDelete().Model((*model.UserBalance)(nil)).Where("1=1").Exec(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.NewDelete().Model((*model.User)(nil)).Where("1=1").Exec(ctx)
+	return err
 }

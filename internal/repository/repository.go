@@ -18,7 +18,7 @@ var (
 type GophermartRepo interface {
 	Close() error
 	Status(ctx context.Context) (bool, error)
-	CleanupTables(ctx context.Context) error
+	CleanUpTables(ctx context.Context) error
 
 	CreateUser(ctx context.Context, user *model.User) error
 	GetUserByLogin(ctx context.Context, login string) (*model.User, error)

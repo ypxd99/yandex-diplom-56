@@ -15,7 +15,7 @@ func setupTestDB(t *testing.T) *postgres.PostgresRepo {
 	db, err := postgres.Connect(context.Background())
 	assert.NoError(t, err)
 
-	err = db.CleanupTables(context.Background())
+	err = db.CleanUpTables(context.Background())
 	assert.NoError(t, err)
 
 	return db
