@@ -19,7 +19,8 @@ func (h *Handler) Register(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -67,7 +68,8 @@ func (h *Handler) Login(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	err := c.ShouldBindJSON(&req)
+	if err != nil {	
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -231,7 +233,8 @@ func (h *Handler) GetBalance(c *gin.Context) {
 				Withdrawn: 0,
 			}
 
-			if err := h.service.InitializeUserBalance(c.Request.Context(), userID); err != nil {
+			err = h.service.InitializeUserBalance(c.Request.Context(), userID)
+			if err != nil {
 				util.GetLogger().Errorf("Failed to initialize user balance: %v", err)
 			}
 		} else {
@@ -264,7 +267,8 @@ func (h *Handler) WithdrawBalance(c *gin.Context) {
 		Sum   float64 `json:"sum" binding:"required"`
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	err = c.ShouldBindJSON(&req)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -276,21 +280,6 @@ func (h *Handler) WithdrawBalance(c *gin.Context) {
 
 	if req.Sum <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Sum must be positive"})
-		return
-	}
-
-	balance, err := h.service.GetUserBalance(c.Request.Context(), userID)
-	if err != nil {
-		if errors.Is(err, repository.ErrBalanceNotFound) {
-			c.JSON(http.StatusPaymentRequired, gin.H{"error": "Insufficient funds"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return
-	}
-
-	if balance.Current < req.Sum {
-		c.JSON(http.StatusPaymentRequired, gin.H{"error": "Insufficient funds"})
 		return
 	}
 

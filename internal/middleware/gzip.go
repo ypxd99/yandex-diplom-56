@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"github.com/ypxd99/yandex-diplom-56/util"
 )
 
 type responseWriter struct {
@@ -47,7 +48,10 @@ func GzipMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		wr.ResponseWriter.Write(wr.buf.Bytes())
+		_, err := wr.ResponseWriter.Write(wr.buf.Bytes())
+		if err != nil {
+			util.GetLogger().Error(err)
+		}
 	}
 }
 
@@ -77,5 +81,8 @@ func (w *responseWriter) handleGzipResponse() {
 	gz := gzip.NewWriter(w.ResponseWriter)
 	defer gz.Close()
 
-	gz.Write(w.buf.Bytes())
+	_, err := gz.Write(w.buf.Bytes())
+	if err != nil {
+		util.GetLogger().Error(err)
+	}
 }

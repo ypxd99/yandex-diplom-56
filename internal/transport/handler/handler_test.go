@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/ypxd99/yandex-diplom-56/internal/middleware"
 	"github.com/ypxd99/yandex-diplom-56/internal/mocks"
 	"github.com/ypxd99/yandex-diplom-56/internal/model"
 	"github.com/ypxd99/yandex-diplom-56/internal/repository"
@@ -36,14 +35,6 @@ func setupTestRouter() (*mocks.MockGophermartRepo, *gin.Engine) {
 func hashPassword(password string) string {
 	hash := sha256.Sum256([]byte(password))
 	return hex.EncodeToString(hash[:])
-}
-
-func generateTestToken(userID uuid.UUID) string {
-	token, err := middleware.GenerateToken(userID, []byte(util.GetConfig().Auth.SecretKey))
-	if err != nil {
-		panic(err)
-	}
-	return token
 }
 
 func TestHandler_Register(t *testing.T) {

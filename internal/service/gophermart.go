@@ -29,7 +29,8 @@ func (s *Service) Register(ctx context.Context, login, password string) (*model.
 		Password: hashedPassword,
 	}
 
-	if err := s.repo.CreateUser(ctx, user); err != nil {
+	err = s.repo.CreateUser(ctx, user)
+	if err != nil {
 		return nil, err
 	}
 
@@ -83,7 +84,8 @@ func (s *Service) CreateOrder(ctx context.Context, userID uuid.UUID, number stri
 		UploadedAt: time.Now(),
 	}
 
-	if err := s.repo.CreateOrder(ctx, order); err != nil {
+	err = s.repo.CreateOrder(ctx, order)
+	if err != nil {
 		return nil, err
 	}
 
@@ -100,7 +102,8 @@ func (s *Service) ProcessOrder(ctx context.Context, orderID uuid.UUID, status mo
 		return err
 	}
 
-	if err := s.repo.UpdateOrderStatus(ctx, orderID, status, accrual); err != nil {
+	err = s.repo.UpdateOrderStatus(ctx, orderID, status, accrual)
+	if err != nil {
 		return err
 	}
 
@@ -111,7 +114,8 @@ func (s *Service) ProcessOrder(ctx context.Context, orderID uuid.UUID, status mo
 		}
 
 		balance.Current += accrual
-		if err := s.repo.UpdateUserBalance(ctx, order.UserID, balance.Current, balance.Withdrawn); err != nil {
+		err = s.repo.UpdateUserBalance(ctx, order.UserID, balance.Current, balance.Withdrawn)
+		if err != nil {
 			return err
 		}
 	}
@@ -140,13 +144,15 @@ func (s *Service) WithdrawBalance(ctx context.Context, userID uuid.UUID, orderNu
 		ProcessedAt: time.Now(),
 	}
 
-	if err := s.repo.CreateWithdrawal(ctx, withdrawal); err != nil {
+	err = s.repo.CreateWithdrawal(ctx, withdrawal)
+	if err != nil {
 		return err
 	}
 
 	balance.Current -= sum
 	balance.Withdrawn += sum
-	if err := s.repo.UpdateUserBalance(ctx, userID, balance.Current, balance.Withdrawn); err != nil {
+	err = s.repo.UpdateUserBalance(ctx, userID, balance.Current, balance.Withdrawn)
+	if err != nil {
 		return err
 	}
 
@@ -164,6 +170,9 @@ func (s *Service) GetOrderByNumber(ctx context.Context, number string) (*model.O
 			return nil, ErrOrderNotFound
 		}
 		return nil, err
+	}
+	if order == nil {
+		return nil, ErrOrderNotFound
 	}
 	return order, nil
 }

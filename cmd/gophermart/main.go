@@ -25,7 +25,7 @@ func main() {
 	logger.Info("start gophermart service")
 
 	if cfg.Postgres.MakeMigration {
-		go makeMegrations()
+		go makeMigrations()
 	}
 
 	var (
@@ -72,7 +72,7 @@ func main() {
 	util.GetLogger().Log(4, "HTTP GOPHERMART service stopped")
 }
 
-func makeMegrations() {
+func makeMigrations() {
 	// migrate UP
 	util.GetLogger().Info("start migrations")
 	err := postgres.MigrateDBUp(context.Background())

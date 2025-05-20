@@ -54,7 +54,8 @@ func (s *Service) processNewOrders(ctx context.Context) {
 		go func(order *model.Order) {
 			defer wg.Done()
 
-			if err := s.repo.UpdateOrderStatus(ctx, order.ID, model.OrderStatusProcessing, 0); err != nil {
+			err := s.repo.UpdateOrderStatus(ctx, order.ID, model.OrderStatusProcessing, 0)
+			if err != nil {
 				logger.Errorf("Failed to update order status to PROCESSING: %v", err)
 				return
 			}
@@ -69,7 +70,8 @@ func (s *Service) processNewOrders(ctx context.Context) {
 				return
 			}
 
-			if err := s.ProcessOrder(ctx, order.ID, accrual.Status, accrual.Accrual); err != nil {
+			err = s.ProcessOrder(ctx, order.ID, accrual.Status, accrual.Accrual)
+			if err != nil {
 				logger.Errorf("Failed to process order: %v", err)
 			}
 		}(order)
@@ -98,7 +100,8 @@ func (s *Service) processNewOrders(ctx context.Context) {
 			}
 
 			if accrual.Status != model.OrderStatusProcessing {
-				if err := s.ProcessOrder(ctx, order.ID, accrual.Status, accrual.Accrual); err != nil {
+				err = s.ProcessOrder(ctx, order.ID, accrual.Status, accrual.Accrual)
+				if err != nil {
 					logger.Errorf("Failed to process order: %v", err)
 				}
 			}
@@ -147,7 +150,8 @@ func (s *Service) checkAccrualSystem(ctx context.Context, orderNumber string) (*
 	}
 
 	var accrual OrderAccrual
-	if err := json.NewDecoder(resp.Body).Decode(&accrual); err != nil {
+	err = json.NewDecoder(resp.Body).Decode(&accrual)
+	if err != nil {
 		return nil, err
 	}
 
