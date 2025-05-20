@@ -7,19 +7,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-type UpdateRoutesReq struct {
-	ServiceName string `json:"service_name"`
-	URL         string `json:"URL"`
-}
-
 type route struct {
 	Method  string `json:"method"`
 	Path    string `json:"path"`
 	Handler string `json:"handler"`
-}
-
-type RoutesLog struct {
-	Routes map[string]bool `yaml:"Routes"`
 }
 
 func GetMetricsRoute(r *gin.Engine) {

@@ -22,8 +22,12 @@ type Config struct {
 	Server   Server    `yaml:"Server"`
 	Postgres Postgres  `yaml:"Postgres"`
 	Auth     Auth      `yaml:"Auth"`
+	Accrual  Accrual   `yaml:"Accrual"`
 }
 
+type Accrual struct {
+	AccrualSystemAddress string `yaml:"AccrualSystemAddress"`
+}
 type Auth struct {
 	SecretKey  string `yaml:"SecretKey"`
 	CookieName string `yaml:"CookieName"`
@@ -83,14 +87,19 @@ func GetConfig() *Config {
 
 		flag.StringVar(&conf.Server.ServerAddress, "a", fmt.Sprintf("%s:%d", conf.Server.Address, conf.Server.Port), "HTTP server address")
 		flag.StringVar(&conf.Postgres.ConnString, "d", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", conf.Postgres.User, conf.Postgres.Password, conf.Postgres.Address, conf.Postgres.DBName), "Database connect string")
+		flag.StringVar(&conf.Accrual.AccrualSystemAddress, "r", "http://localhost:8081", "Accrual system address")
 		flag.Parse()
 
-		if envAddr, exists := os.LookupEnv("SERVER_ADDRESS"); exists {
+		if envAddr, exists := os.LookupEnv("RUN_ADDRESS"); exists {
 			conf.Server.ServerAddress = envAddr
 		}
 
-		if envDB, exists := os.LookupEnv("DATABASE_DSN"); exists {
+		if envDB, exists := os.LookupEnv("DATABASE_URI"); exists {
 			conf.Postgres.ConnString = envDB
+		}
+
+		if envAccrual, exists := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS"); exists {
+			conf.Accrual.AccrualSystemAddress = envAccrual
 		}
 
 		config = &conf

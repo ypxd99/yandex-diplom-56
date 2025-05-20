@@ -18,7 +18,6 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
-
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
@@ -69,3 +68,4 @@ require (
 	google.golang.org/protobuf v1.36.6 // indirect
 	mellium.im/sasl v0.3.2 // indirect
 )
+

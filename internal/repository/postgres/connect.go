@@ -9,14 +9,15 @@ import (
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/uptrace/bun/extra/bundebug"
+	"github.com/ypxd99/yandex-diplom-56/internal/model"
 	"github.com/ypxd99/yandex-diplom-56/util"
 )
 
-type Postgres struct {
+type PostgresRepo struct {
 	db *bun.DB
 }
 
-func Connect(ctx context.Context) (*Postgres, error) {
+func Connect(ctx context.Context) (*PostgresRepo, error) {
 	cfg := util.GetConfig().Postgres
 
 	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(cfg.ConnString)))
@@ -27,20 +28,37 @@ func Connect(ctx context.Context) (*Postgres, error) {
 	}
 	db.DB.SetMaxOpenConns(cfg.MaxConn)
 	db.DB.SetConnMaxLifetime(time.Duration(cfg.MaxConnLifeTime) * time.Second)
-	db.Exec(`SET search_path TO gophermart, public;`)
+	//db.Exec(`SET search_path TO gophermart, public;`)
 
-	return &Postgres{db: db}, db.PingContext(ctx)
+	return &PostgresRepo{db: db}, db.PingContext(ctx)
 }
 
-func (p *Postgres) Close() error {
+func (p *PostgresRepo) Close() error {
 	return p.db.Close()
 }
 
-func (p *Postgres) Status(ctx context.Context) (bool, error) {
+func (p *PostgresRepo) Status(ctx context.Context) (bool, error) {
 	err := p.db.PingContext(ctx)
 	if err != nil {
 		return false, err
 	}
 
 	return true, nil
+}
+
+func (p *PostgresRepo) CleanUpTables(ctx context.Context) error {
+	_, err := p.db.NewDelete().Model((*model.Withdrawal)(nil)).Where("1=1").Exec(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.NewDelete().Model((*model.Order)(nil)).Where("1=1").Exec(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.NewDelete().Model((*model.UserBalance)(nil)).Where("1=1").Exec(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.NewDelete().Model((*model.User)(nil)).Where("1=1").Exec(ctx)
+	return err
 }

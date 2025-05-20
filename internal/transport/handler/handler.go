@@ -2,8 +2,8 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ypxd99/yandex-diplom-56/internal/service"
 	"github.com/ypxd99/yandex-diplom-56/internal/middleware"
+	"github.com/ypxd99/yandex-diplom-56/internal/service"
 	"github.com/ypxd99/yandex-diplom-56/util"
 )
 
@@ -24,16 +24,18 @@ func (h *Handler) InitRoutes(r *gin.Engine) {
 	r.Use(middleware.GzipMiddleware())
 	r.Use(middleware.AuthMiddleware())
 
-	// r.POST("/", h.shorterLink)
-	// r.GET("/:id", h.getLinkByID)
-	// r.GET("/ping", h.getStorageStatus)
+	r.POST("/api/user/register", h.Register)
+	r.POST("/api/user/login", h.Login)
 
-	// rAPI := r.Group("/api")
-	// rAPI.POST("/shorten", h.shorten)
-	// rAPI.POST("/shorten/batch", h.batchShorten)
+	api := r.Group("/api/user")
+	api.Use(middleware.RequireAuth())
+	{
+		api.POST("/orders", h.CreateOrder)
+		api.GET("/orders", h.GetOrders)
+		api.GET("/balance", h.GetBalance)
+		api.POST("/balance/withdraw", h.WithdrawBalance)
+		api.GET("/withdrawals", h.GetWithdrawals)
+	}
 
-	// userAPI := rAPI.Group("/user")
-	// userAPI.Use(middleware.RequireAuth())
-	// userAPI.GET("/urls", h.getUserURLs)
-	// userAPI.DELETE("/urls", h.deleteURLs)
+	r.GET("/api/orders/:number", h.GetOrderAccrual)
 }
